@@ -1,0 +1,54 @@
+🗺️ Navigation Guide
+If you want to...
+
+🚀 Get started quickly → Read README_DOCUMENTATION.md (10 min)
+🏗️ Understand the architecture → Read ARCHITECTURE_GUIDE.md (30-45 min)
+👀 See data flow visually → Read SEQUENCE_DIAGRAM.md (20 min)
+💻 Write code/debug → Read PRACTICAL_CODE_GUIDE.md (30 min)
+📊 Compare jobs → See matrix in README_DOCUMENTATION.md
+🔍 Debug specific issue → See "Debugging Guide" in PRACTICAL_CODE_GUIDE.md
+
+------------------------------------------------------------------------------------
+
+1. README_DOCUMENTATION.md - START HERE
+Quick reference & navigation hub
+Architecture at a glance
+Job comparison matrix
+Quick start commands
+Learning path for new team members
+Common pitfalls & solutions
+
+2. ARCHITECTURE_GUIDE.md - DETAILED REFERENCE
+40+ pages of comprehensive architecture documentation
+High-level system design
+Data flow diagrams
+Key concepts explained (deduplication, denormalization, event routing)
+Deep dive into each job with code examples:
+Telemetry Extractor (batch unpacking, dedup, audit events)
+Pipeline Preprocessor (validation, data correction, dedup, routing)
+De-normalization (Redis enrichment from 5 sources)
+Druid Events Validator (final validation & routing)
+Configuration examples for each job
+Metrics & monitoring guidance
+
+3. SEQUENCE_DIAGRAM.md - VISUAL GUIDE
+Step-by-step ASCII sequence showing entire data flow
+Event transformations at each pipeline stage
+Error scenarios & routing decisions
+Event state transitions (JSON examples)
+Performance characteristics table
+Real-time metrics dashboard example
+
+4. PRACTICAL_CODE_GUIDE.md - HANDS-ON
+How to run Flink jobs locally & on cluster
+Real event structure examples (JSON at each stage)
+Complete configuration files for all 4 jobs
+Common code patterns:
+BaseProcessFunction pattern
+Deduplication pattern
+Schema validation pattern
+Redis cache pattern
+Window aggregation pattern
+Debugging guide with Kafka/Redis commands
+Development workflow
+Testing strategies
