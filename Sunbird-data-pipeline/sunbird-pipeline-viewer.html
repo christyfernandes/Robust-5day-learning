@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunbird Data Pipeline Visualizer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#0f172a;--bg1:#1e293b;--bg2:#334155;--border:#475569;
+  --t0:#f1f5f9;--t1:#94a3b8;--t2:#64748b;
+  --blue:#3b82f6;--blue2:#2563eb;--green:#10b981;
+  --amber:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--cyan:#06b6d4;
+}
+body{background:var(--bg0);color:var(--t0);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* HEADER */
+.hdr{background:var(--bg1);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.hdr-logo{font-size:17px;font-weight:800;flex:1}.hdr-logo span{color:var(--blue)}
+.hdr-sub{font-size:11px;color:var(--t2)}
+.btn{padding:6px 13px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--t0);cursor:pointer;font-size:12px;transition:.15s;display:flex;align-items:center;gap:5px}
+.btn:hover{background:var(--border)}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.pri:hover{background:var(--blue2)}
+.btn.warn{border-color:var(--amber);color:var(--amber);background:transparent}
+.btn.warn:hover{background:rgba(245,158,11,.1)}
+.mode-tag{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.mode-tag.view{background:rgba(16,185,129,.2);color:#34d399}
+.mode-tag.edit{background:rgba(245,158,11,.2);color:#fbbf24}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden}
+.canvas{flex:1;overflow-y:auto;padding:24px 32px}
+.panel{width:0;overflow:hidden;transition:width .3s ease;background:var(--bg1);border-left:1px solid var(--border);flex-shrink:0}
+.panel.open{width:440px}
+.panel-inner{width:440px;height:100%;overflow-y:auto;padding:20px}
+
+/* PIPELINE NODES */
+.flow{display:flex;flex-direction:column;align-items:center}
+.connector{width:2px;height:28px;background:var(--border);position:relative;flex-shrink:0}
+.connector::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--border)}
+
+.source-box,.sink-box{padding:10px 28px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;letter-spacing:.3px}
+.source-box{background:rgba(139,92,246,.15);border:1.5px solid var(--purple);color:var(--purple)}
+.sink-box{background:rgba(6,182,212,.15);border:1.5px solid var(--cyan);color:var(--cyan);margin:4px}
+
+.topic-pill{padding:6px 18px;border-radius:20px;border:1.5px solid;font-size:12px;font-weight:600;cursor:default;white-space:nowrap;transition:.15s}
+.topic-pill.main{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08)}
+.topic-pill.route{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.08)}
+.topic-pill.err{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.08)}
+.topic-pill.sink{border-color:var(--cyan);color:var(--cyan);background:rgba(6,182,212,.08)}
+
+/* JOB CARD */
+.job-card{background:var(--bg1);border:2px solid var(--border);border-radius:12px;padding:14px 18px;width:420px;cursor:pointer;transition:.2s;position:relative}
+.job-card:hover,.job-card.active{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.job-card.active{background:rgba(59,130,246,.06)}
+.jc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.jc-icon{font-size:22px;width:40px;height:40px;background:rgba(59,130,246,.15);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.jc-name{font-size:14px;font-weight:700}
+.jc-badges{display:flex;gap:5px;margin-top:3px}
+.badge{font-size:9px;padding:2px 7px;border-radius:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge.flink{background:rgba(59,130,246,.2);color:#60a5fa}
+.badge.redis{background:rgba(239,68,68,.2);color:#f87171}
+.badge.kafka{background:rgba(16,185,129,.2);color:#34d399}
+.jc-desc{font-size:12px;color:var(--t1);line-height:1.5}
+.jc-meta{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--bg2);font-size:11px;color:var(--t2)}
+.jc-meta strong{color:var(--t1)}
+
+/* SIDE OUTPUTS */
+.side-outs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:520px;margin-top:6px}
+.side-out{display:flex;flex-direction:column;align-items:center;gap:3px}
+.side-label{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--t2);font-weight:600}
+
+/* SPLIT */
+.split-row{display:flex;gap:12px;align-items:flex-start;justify-content:center}
+.split-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+.split-lbl{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px}
+
+/* EDIT CONTROLS */
+.edit-btns{display:none;position:absolute;top:6px;right:6px;gap:4px}
+.canvas.edit .edit-btns{display:flex}
+.eb{width:26px;height:26px;border-radius:5px;border:1px solid var(--border);background:var(--bg0);color:var(--t1);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.eb:hover{background:var(--border);color:var(--t0)}
+.eb.del:hover{background:rgba(239,68,68,.2);border-color:var(--red);color:var(--red)}
+.add-btn{display:none;align-items:center;gap:7px;padding:7px 18px;border-radius:8px;border:2px dashed var(--border);background:transparent;color:var(--t2);cursor:pointer;font-size:12px;transition:.15s;margin:4px 0}
+.canvas.edit .add-btn{display:flex}
+.add-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* DETAIL PANEL */
+.dp-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.dp-icon{font-size:28px;width:48px;height:48px;background:rgba(59,130,246,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dp-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.dp-desc{font-size:12px;color:var(--t1);line-height:1.5}
+.dp-close{margin-left:auto;background:none;border:none;color:var(--t1);cursor:pointer;font-size:18px;padding:2px;flex-shrink:0}
+.dp-close:hover{color:var(--t0)}
+
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto;gap:0}
+.tab{padding:7px 14px;font-size:12px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;white-space:nowrap;transition:.15s}
+.tab:hover{color:var(--t1)}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tc{display:none}.tc.on{display:block}
+
+.sec-h{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t2);font-weight:700;margin-bottom:8px;margin-top:14px}
+.sec-h:first-child{margin-top:0}
+
+.step{display:flex;gap:10px;margin-bottom:14px}
+.step-n{width:26px;height:26px;border-radius:50%;background:rgba(59,130,246,.2);color:#60a5fa;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-t{font-size:13px;font-weight:600;margin-bottom:3px}
+.step-d{font-size:12px;color:var(--t1);line-height:1.5}
+
+.t-item{background:var(--bg2);border-radius:7px;padding:8px 12px;margin-bottom:6px;border-left:3px solid}
+.t-item.in{border-color:var(--purple)}.t-item.out{border-color:var(--green)}.t-item.dup{border-color:var(--amber)}.t-item.fail{border-color:var(--red)}.t-item.rt{border-color:var(--cyan)}
+.t-name{font-size:12px;font-weight:700;font-family:monospace;margin-bottom:2px}
+.t-desc{font-size:11px;color:var(--t2)}
+.t-tag{font-size:9px;padding:1px 6px;border-radius:4px;font-weight:700;text-transform:uppercase;display:inline-block;margin-top:3px}
+
+.r-card{background:var(--bg2);border-radius:7px;padding:10px;border-left:3px solid var(--red);margin-bottom:8px}
+.r-db{font-size:18px;font-weight:800;color:#f87171}
+.r-info{font-size:11px;color:var(--t1);line-height:1.6;margin-top:4px}
+
+.f-item{background:var(--bg2);border-radius:7px;padding:9px 12px;margin-bottom:7px}
+.f-name{font-size:12px;font-weight:700;font-family:monospace;color:#60a5fa;margin-bottom:2px}
+.f-path{font-size:10px;color:var(--t2);font-family:monospace;word-break:break-all;margin-bottom:3px}
+.f-desc{font-size:11px;color:var(--t1)}
+
+.m-item{padding:5px 10px;background:var(--bg2);border-radius:5px;font-size:11px;font-family:monospace;color:var(--t1);margin-bottom:5px}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+.overlay.on{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:22px;width:620px;max-width:92vw;max-height:85vh;overflow-y:auto}
+.m-head{display:flex;align-items:center;margin-bottom:16px}
+.m-title{font-size:15px;font-weight:700;flex:1}
+.m-close{background:none;border:none;color:var(--t1);cursor:pointer;font-size:18px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:10px;color:var(--t2);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg textarea,.fg select{width:100%;padding:7px 10px;background:var(--bg0);border:1px solid var(--border);border-radius:6px;color:var(--t0);font-size:12px;outline:none;transition:.15s}
+.fg input:focus,.fg textarea:focus{border-color:var(--blue)}
+.fg textarea{resize:vertical;min-height:72px;font-family:inherit}
+.fg .hint{font-size:10px;color:var(--t2);margin-top:3px}
+.json-area{font-family:monospace;font-size:11px;line-height:1.6;min-height:350px}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:12px;padding:0 0 16px 0}
+.lg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t1)}
+.lg-dot{width:10px;height:10px;border-radius:2px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;z-index:300;transform:translateY(80px);transition:.3s}
+.toast.show{transform:translateY(0)}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg0)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-logo">Sunbird <span>Data Pipeline</span> Visualizer</div>
+    <div class="hdr-sub">Click any Flink job to explore its details</div>
+  </div>
+  <span class="mode-tag view" id="modeTag">View Mode</span>
+  <button class="btn warn" id="editBtn" onclick="toggleEdit()">✏️ Edit Mode</button>
+  <button class="btn" onclick="openIE()">⬆️ Import / Export</button>
+  <button class="btn" onclick="openHelp()">❓ Help</button>
+</div>
+
+<div class="main">
+  <div class="canvas" id="canvas"></div>
+  <div class="panel" id="panel"><div class="panel-inner" id="panelInner"></div></div>
+</div>
+
+<!-- Edit Job Modal -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <div class="m-head"><div class="m-title" id="emt">Edit Job</div><button class="m-close" onclick="closeM('editModal')">✕</button></div>
+    <div id="emBody"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn" onclick="closeM('editModal')">Cancel</button>
+      <button class="btn pri" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import/Export Modal -->
+<div class="overlay" id="ieModal">
+  <div class="modal">
+    <div class="m-head"><div class="m-title">Import / Export Pipeline JSON</div><button class="m-close" onclick="closeM('ieModal')">✕</button></div>
+    <p style="font-size:12px;color:var(--t1);margin-bottom:12px">Edit the JSON below to fully customize the pipeline. All jobs, topics, steps, Redis DBs, and source files are configurable.</p>
+    <textarea class="fg json-area" id="jsonArea" style="width:100%;border:1px solid var(--border);background:var(--bg0);color:var(--t0);padding:10px;border-radius:6px;outline:none"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn" onclick="downloadJSON()">⬇️ Download</button>
+      <button class="btn" onclick="closeM('ieModal')">Cancel</button>
+      <button class="btn pri" onclick="applyJSON()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div class="overlay" id="helpModal">
+  <div class="modal" style="max-width:520px">
+    <div class="m-head"><div class="m-title">How This Pipeline Works</div><button class="m-close" onclick="closeM('helpModal')">✕</button></div>
+    <div style="font-size:13px;color:var(--t1);line-height:1.8">
+      <p style="margin-bottom:10px"><strong style="color:var(--t0)">Apache Flink</strong> — A stream processing engine. Each "job" is a continuously running program that reads events as they arrive, processes them, and writes results. No batch delay.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--t0)">Apache Kafka</strong> — A message bus with named "topics" (like mailboxes). Job A drops events into a topic; Job B reads from that topic. This decouples each stage so they run independently.</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--t0)">Redis</strong> — An in-memory key-value store used for two things: (1) Deduplication — "have I seen this event before?", and (2) Metadata caching — "what city is device X from?"</p>
+      <p style="margin-bottom:10px"><strong style="color:var(--t0)">Druid</strong> — A time-series analytics database where final validated events are stored for dashboards and reports.</p>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <p><strong style="color:var(--t0)">Using this tool:</strong><br>
+      • Click any <strong>blue job card</strong> to see full details in the right panel<br>
+      • Click <strong>Edit Mode</strong> to add, remove, or modify jobs in the pipeline<br>
+      • Use <strong>Import/Export</strong> to save or share the pipeline config as JSON</p>
+    </div>
+    <div style="text-align:right;margin-top:16px"><button class="btn pri" onclick="closeM('helpModal')">Got it</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// PIPELINE DATA — edit this to configure the pipeline
+// ═══════════════════════════════════════════════════════════
+let cfg = {
+  title: "Sunbird Data Pipeline",
+  stages: [
+    {
+      id:"telemetry-extractor",
+      name:"Telemetry Extractor",
+      icon:"📦",
+      shortDesc:"Unpacks batch events from the Telemetry API, deduplicates at batch level, validates size, and routes by event type.",
+      inputTopic:{name:"telemetry.ingest",desc:"Batch events sent by mobile/web Telemetry API"},
+      outputTopic:{name:"telemetry.raw",desc:"Individual unpacked events ready for preprocessing"},
+      sideOutputs:[
+        {name:"telemetry.assess.raw",desc:"Redacted ASSESS/RESPONSE events",type:"route"},
+        {name:"druid.events.log",desc:"LOG type events",type:"route"},
+        {name:"telemetry.extractor.duplicate",desc:"Duplicate batches (same msgid)",type:"dup"},
+        {name:"telemetry.failed",desc:"Oversized events >1MB",type:"fail"},
+        {name:"telemetry.extractor.failed",desc:"Batch-level parsing failures",type:"fail"}
+      ],
+      description:"The <strong>first stage</strong> in the pipeline. The Telemetry API batches many individual events into a single HTTP payload and drops it to Kafka. This job unpacks each batch, validates it, and emits individual events for downstream processing.",
+      steps:[
+        {title:"Batch Deduplication",desc:"Each batch carries a unique msgid. The job checks Redis DB 1 (TTL 3600s) to see if this batch was already processed. If yes, the whole batch is routed to telemetry.extractor.duplicate and skipped. This prevents double-processing when the API retries."},
+        {title:"Event Extraction",desc:"Unpacks the events[] array from the batch container JSON. One batch → many individual events. Adds syncts (server receive timestamp) and @timestamp fields to each event."},
+        {title:"Size Validation",desc:"Any individual event larger than 1MB is dropped to telemetry.failed. Oversized events would cause downstream memory issues."},
+        {title:"Event Type Routing",desc:"Routes by event type: ASSESS/RESPONSE → RedactorFunction → telemetry.assess.raw | LOG → druid.events.log | Everything else → telemetry.raw"},
+        {title:"Assessment Redaction",desc:"ASSESS and RESPONSE events can contain raw question text. The RedactorFunction removes sensitive fields based on questionType before emitting to telemetry.assess.raw."},
+        {title:"Audit Event Generation",desc:"After processing each unique batch, an AUDIT event is generated summarizing how many events were extracted, failed, etc."}
+      ],
+      redis:[
+        {db:"DB 1",host:"localhost:6379",ttl:"3600s",purpose:"Batch-level deduplication store. Key = msgid from batch params."}
+      ],
+      files:[
+        {name:"TelemetryExtractorStreamTask.scala",path:"data-pipeline-flink/telemetry-extractor/src/main/scala/org/sunbird/dp/extractor/task/TelemetryExtractorStreamTask.scala",desc:"Main entry point. Sets up Flink StreamExecutionEnvironment, wires Kafka source → functions → Kafka sinks."},
+        {name:"ExtractionFunction.scala",path:"data-pipeline-flink/telemetry-extractor/src/main/scala/org/sunbird/dp/extractor/functions/ExtractionFunction.scala",desc:"Core extraction logic: unpacks events[], validates size, adds timestamps, routes by event type."},
+        {name:"DeduplicationFunction.scala",path:"data-pipeline-flink/telemetry-extractor/src/main/scala/org/sunbird/dp/extractor/functions/DeduplicationFunction.scala",desc:"Checks batch msgid in Redis. Unique → continue. Duplicate → side output."},
+        {name:"RedactorFunction.scala",path:"data-pipeline-flink/telemetry-extractor/src/main/scala/org/sunbird/dp/extractor/functions/RedactorFunction.scala",desc:"Removes sensitive fields from ASSESS/RESPONSE events before routing downstream."},
+        {name:"TelemetryExtractorConfig.scala",path:"data-pipeline-flink/telemetry-extractor/src/main/scala/org/sunbird/dp/extractor/task/TelemetryExtractorConfig.scala",desc:"All config keys: topic names, Redis DB ID, max event size, parallelism settings."},
+        {name:"telemetry-extractor.conf",path:"data-pipeline-flink/telemetry-extractor/src/main/resources/telemetry-extractor.conf",desc:"TypeSafe Config file. Kafka topics, Redis DB, max size. Merged with base-config.conf."}
+      ],
+      metrics:["success-event-count — Events successfully extracted","failed-event-count — Events dropped (too large)","success-batch-count — Unique batches processed","duplicate-batch-count — Duplicate batches skipped","audit-event-count — Audit events generated","cache-hit-count — Redis dedup hits","cache-miss-count — Redis dedup misses"]
+    },
+    {
+      id:"pipeline-preprocessor",
+      name:"Pipeline Preprocessor",
+      icon:"🔍",
+      shortDesc:"Validates events against JSON schema, corrects data quality issues, deduplicates at event level, and routes by event type.",
+      inputTopic:{name:"telemetry.raw",desc:"Individual events from Telemetry Extractor"},
+      outputTopic:{name:"telemetry.unique",desc:"Validated, corrected, deduplicated events"},
+      sideOutputs:[
+        {name:"telemetry.unique.primary",desc:"High-priority events (AUDIT, START, END, etc.)",type:"route"},
+        {name:"telemetry.unique.secondary",desc:"Lower-priority: INTERACT, IMPRESSION, SHARE_ITEM",type:"route"},
+        {name:"druid.events.log",desc:"LOG type events",type:"route"},
+        {name:"telemetry.error",desc:"ERROR type events",type:"route"},
+        {name:"telemetry.audit",desc:"AUDIT type events",type:"route"},
+        {name:"telemetry.cb.audit",desc:"Content Broadcast audit events",type:"route"},
+        {name:"telemetry.duplicate",desc:"Events with duplicate mid (event-level dedup)",type:"dup"},
+        {name:"telemetry.failed",desc:"Events that fail schema validation",type:"fail"}
+      ],
+      description:"The <strong>second stage</strong>. Receives individual events from Telemetry Extractor and does three things: (1) corrects known data quality issues, (2) validates each event's structure against a JSON schema, and (3) deduplicates at the event level using the mid field. Valid unique events are then routed to different output topics based on their type.",
+      steps:[
+        {title:"Data Correction",desc:"Fixes known data quality issues before validation: removes 'f:' prefix from federated user IDs, fills in a default channel if missing, corrects dialCodes → dialcode key naming, corrects dialCode values for DialCode/QR object types."},
+        {title:"Schema Validation",desc:"Validates each event's JSON structure against schemas in schemas/telemetry/3.0/. The schema file is chosen by event type (eid). Invalid events → telemetry.failed."},
+        {title:"Event-Level Deduplication",desc:"Each event has a unique mid (message ID). Checks Redis DB 2 (TTL 3600s). Duplicate mids → telemetry.duplicate. This prevents the same event from being processed twice even if received through different batches."},
+        {title:"SHARE Event Flattening",desc:"A SHARE event represents a user sharing content. This step flattens it: creates one SHARE_ITEM sub-event per transferred item. transfer=0 → type 'download', transfer>0 → type 'import'."},
+        {title:"Event Routing",desc:"Routes validated events by eid: LOG → druid.events.log, ERROR → telemetry.error, AUDIT → telemetry.audit, CB_AUDIT → telemetry.cb.audit, INTERACT/IMPRESSION/SHARE_ITEM → telemetry.unique.secondary (lower priority), everything else → telemetry.unique.primary."}
+      ],
+      redis:[
+        {db:"DB 2",host:"localhost:6379",ttl:"3600s",purpose:"Event-level deduplication store. Key = mid (message ID) of each event."}
+      ],
+      files:[
+        {name:"PipelinePreprocessorStreamTask.scala",path:"data-pipeline-flink/pipeline-preprocessor/src/main/scala/org/sunbird/dp/preprocessor/task/PipelinePreprocessorStreamTask.scala",desc:"Main entry point. Chains validation → routing → flattening functions with Kafka sources/sinks."},
+        {name:"TelemetryValidationFunction.scala",path:"data-pipeline-flink/pipeline-preprocessor/src/main/scala/org/sunbird/dp/preprocessor/functions/TelemetryValidationFunction.scala",desc:"Orchestrates data correction, schema validation, and deduplication for each event."},
+        {name:"TelemetryRouterFunction.scala",path:"data-pipeline-flink/pipeline-preprocessor/src/main/scala/org/sunbird/dp/preprocessor/functions/TelemetryRouterFunction.scala",desc:"Routes validated events to the correct output topic based on event type."},
+        {name:"ShareEventsFlattenerFunction.scala",path:"data-pipeline-flink/pipeline-preprocessor/src/main/scala/org/sunbird/dp/preprocessor/functions/ShareEventsFlattenerFunction.scala",desc:"Expands SHARE events into individual SHARE_ITEM events."},
+        {name:"pipeline-preprocessor.conf",path:"data-pipeline-flink/pipeline-preprocessor/src/main/resources/pipeline-preprocessor.conf",desc:"Config: topic names, Redis DB, schema path, default channel, producer IDs for dedup."}
+      ],
+      metrics:["validation-success-count — Events passing schema validation","validation-failed-count — Events failing schema validation","dedup-unique-count — Unique events passed through","dedup-duplicate-count — Duplicate events blocked","primary-route-count — Events routed to primary topic","secondary-route-count — Events routed to secondary topic","share-events-count — SHARE events flattened"]
+    },
+    {
+      id:"de-normalization",
+      name:"De-normalization",
+      icon:"🔗",
+      shortDesc:"Enriches events with device, user, content, and location metadata fetched from Redis caches populated by separate updater jobs.",
+      inputTopic:{name:"telemetry.unique",desc:"Validated deduplicated events (primary + secondary streams)"},
+      outputTopic:{name:"telemetry.denorm",desc:"Events enriched with device, user, content, and location metadata"},
+      sideOutputs:[
+        {name:"druid.events.summary",desc:"Denormalized summary events (ME_WORKFLOW_SUMMARY)",type:"route"},
+        {name:"telemetry.failed",desc:"Events older than 3 months (expired)",type:"fail"},
+        {name:"telemetry.duplicate",desc:"Dedup failures from denorm processing",type:"dup"}
+      ],
+      description:"The <strong>third stage</strong>. Raw events only contain IDs (device ID, user ID, content ID). For analytics queries, you need the actual metadata. This job looks up those IDs in Redis caches and enriches each event with full metadata. The caches are kept warm by separate 'updater' Flink jobs (device-profile-updater, user-cache-updater-2.0, content-cache-updater).",
+      steps:[
+        {title:"Windowed Processing",desc:"Events are grouped into windows of 30 events per device ID (1400 shards). This is a Flink optimization — batching Redis lookups into pipelines reduces network round-trips and increases throughput significantly."},
+        {title:"Age Filter",desc:"Events older than ~3 months are considered stale and dropped to telemetry.failed. This prevents processing ancient events that would have no cache hits anyway."},
+        {title:"Device Enrichment",desc:"Looks up event's did (device ID) in Redis DB 2 (port 6381). Adds: country, state, city, district, device specifications, first access time. Derives ISO state code from state name."},
+        {title:"User Enrichment",desc:"Looks up actor.id in Redis DB 12 (port 6382) when actor.type='User'. Adds: usertype, grade, language, subject, state, district, login type. Defaults to usersignintype='Anonymous' if not found."},
+        {title:"Content Enrichment",desc:"Looks up object.id in Redis DB 5 (port 6380) for content, or DB 6 (port 6383) for dialcodes/QR. Adds: content name, type, MIME type, framework, subject, medium, board, rollup hierarchy (L1=collection, L2=parent)."},
+        {title:"Location Derivation",desc:"Derives final location from priority chain: (1) User Profile location, (2) User Declared location, (3) IP-based device location. No direct lookup — derived from the above enrichments."}
+      ],
+      redis:[
+        {db:"DB 2 (port 6381)",host:"localhost:6381",ttl:"Managed by device-profile-updater",purpose:"Device metadata cache. Key = device ID (did). Populated by device-profile-updater Flink job."},
+        {db:"DB 12 (port 6382)",host:"localhost:6382",ttl:"Managed by user-cache-updater",purpose:"User profile cache. Key = user ID. Populated by user-cache-updater-2.0 Flink job."},
+        {db:"DB 5 (port 6380)",host:"localhost:6380",ttl:"Managed by content-cache-updater",purpose:"Content metadata cache. Key = content ID. Populated by content-cache-updater Flink job."},
+        {db:"DB 6 (port 6383)",host:"localhost:6383",ttl:"Managed by content-cache-updater",purpose:"DialCode/QR code metadata cache. Key = dialcode. Populated by content-cache-updater Flink job."}
+      ],
+      files:[
+        {name:"DenormalizationStreamTask.scala",path:"data-pipeline-flink/de-normalization/src/main/scala/org/sunbird/dp/denorm/task/DenormalizationStreamTask.scala",desc:"Main entry point. Sets up windowed stream with two Kafka inputs (telemetry.unique + telemetry.derived)."},
+        {name:"DenormalizationWindowFunction.scala",path:"data-pipeline-flink/de-normalization/src/main/scala/org/sunbird/dp/denorm/functions/DenormalizationWindowFunction.scala",desc:"Window processor: collects events, checks age, batches Redis lookups, calls each enricher."},
+        {name:"DeviceDenormalization.scala",path:"data-pipeline-flink/de-normalization/src/main/scala/org/sunbird/dp/denorm/domain/DeviceDenormalization.scala",desc:"Fetches device data from Redis and adds devicedata object to event."},
+        {name:"UserDenormalization.scala",path:"data-pipeline-flink/de-normalization/src/main/scala/org/sunbird/dp/denorm/domain/UserDenormalization.scala",desc:"Fetches user profile from Redis and adds userdata object to event."},
+        {name:"ContentDenormalization.scala",path:"data-pipeline-flink/de-normalization/src/main/scala/org/sunbird/dp/denorm/domain/ContentDenormalization.scala",desc:"Fetches content/dialcode metadata from Redis and adds contentdata object to event."},
+        {name:"LocationDenormalization.scala",path:"data-pipeline-flink/de-normalization/src/main/scala/org/sunbird/dp/denorm/domain/LocationDenormalization.scala",desc:"Derives location from device/user enrichment data and adds derivedlocationdata."},
+        {name:"de-normalization.conf",path:"data-pipeline-flink/de-normalization/src/main/resources/de-normalization.conf",desc:"Config: topic names, Redis hosts/ports/DBs, window size (30), shards (1400)."}
+      ],
+      metrics:["device-total — Total device cache lookups","device-cache-hit — Device lookups found in cache","device-cache-miss — Device lookups not found","user-total / user-cache-hit / user-cache-miss","content-total / content-cache-hit / content-cache-miss","location-total — Location derivation attempts","denorm-total — Total events processed"]
+    },
+    {
+      id:"druid-events-validator",
+      name:"Druid Events Validator",
+      icon:"✅",
+      shortDesc:"Final quality gate before Druid. Validates enriched events against Druid schemas, deduplicates summary events, and routes to correct Druid ingestion topics.",
+      inputTopic:{name:"telemetry.denorm",desc:"Fully enriched events from De-normalization"},
+      outputTopic:{name:"druid.events.telemetry",desc:"Validated telemetry events ready for Druid ingestion"},
+      sideOutputs:[
+        {name:"druid.events.summary",desc:"Validated ME_WORKFLOW_SUMMARY events for Druid",type:"route"},
+        {name:"telemetry.duplicate",desc:"Duplicate summary events",type:"dup"},
+        {name:"telemetry.failed",desc:"Events failing Druid schema validation",type:"fail"}
+      ],
+      description:"The <strong>final stage</strong> before events reach Druid (the analytics database). Even after enrichment, events may not be valid Druid records — missing required fields, wrong types, etc. This job performs a final schema validation against Druid-specific schemas and deduplicates summary events. Valid events are then routed to the correct Druid ingestion Kafka topics.",
+      steps:[
+        {title:"Summary Event Deduplication",desc:"ME_WORKFLOW_SUMMARY events are checked for duplicates in Redis DB 8 (TTL 3600s). Duplicate summaries → telemetry.duplicate. Regular telemetry events skip dedup here (they were deduped in preprocessor)."},
+        {title:"Druid Schema Validation",desc:"Validates each event against Druid-specific schemas in schemas/telemetry/ and schemas/summary/. Uses envelope.json for regular events, me_workflow_summary.json for ME_WORKFLOW_SUMMARY. Invalid events → telemetry.failed."},
+        {title:"Final Routing",desc:"ME_WORKFLOW_SUMMARY events → druid.events.summary. All other events → druid.events.telemetry. Druid's Kafka Indexing Service (supervisor) reads from these two topics and ingests into Druid datasources."}
+      ],
+      redis:[
+        {db:"DB 8",host:"localhost:6379",ttl:"3600s",purpose:"Summary event deduplication store. Key = mid of ME_WORKFLOW_SUMMARY events."}
+      ],
+      files:[
+        {name:"DruidValidatorStreamTask.scala",path:"data-pipeline-flink/druid-events-validator/src/main/scala/org/sunbird/dp/validator/task/DruidValidatorStreamTask.scala",desc:"Main entry point. Wires Kafka source → DruidValidatorFunction → two Kafka sinks."},
+        {name:"DruidValidatorFunction.scala",path:"data-pipeline-flink/druid-events-validator/src/main/scala/org/sunbird/dp/validator/functions/DruidValidatorFunction.scala",desc:"Core logic: deduplication → schema validation → routing by event type."},
+        {name:"druid-events-validator.conf",path:"data-pipeline-flink/druid-events-validator/src/main/resources/druid-events-validator.conf",desc:"Config: topic names, Redis DB 8, schema paths, enable/disable validation and dedup flags."}
+      ],
+      metrics:["druid-valid-count — Events passing Druid schema validation","druid-invalid-count — Events failing Druid schema validation","telemetry-route-count — Events routed to druid.events.telemetry","summary-route-count — Events routed to druid.events.summary","duplicate-count — Duplicate summary events blocked"]
+    }
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let editMode = false;
+let selectedId = null;
+let editingId = null;
+let activeTab = 'overview';
+
+// ═══════════════════════════════════════════════════════════
+// RENDER PIPELINE
+// ═══════════════════════════════════════════════════════════
+function render() {
+  const c = document.getElementById('canvas');
+  c.className = 'canvas' + (editMode ? ' edit' : '');
+
+  let html = `
+    <div class="legend">
+      <span class="lg-item"><span class="lg-dot" style="background:var(--blue)"></span>Flink Job (clickable)</span>
+      <span class="lg-item"><span class="lg-dot" style="background:var(--green)"></span>Main Kafka Topic</span>
+      <span class="lg-item"><span class="lg-dot" style="background:var(--amber)"></span>Route Output</span>
+      <span class="lg-item"><span class="lg-dot" style="background:var(--red)"></span>Error / Failed</span>
+      <span class="lg-item"><span class="lg-dot" style="background:var(--purple)"></span>Source / Sink</span>
+    </div>
+    <div class="flow">
+      <div class="source-box">📱 Telemetry API<br><span style="font-size:11px;opacity:.7">Mobile / Web Applications</span></div>
+  `;
+
+  cfg.stages.forEach((s, i) => {
+    const isActive = selectedId === s.id;
+    const inp = i === 0 ? s.inputTopic : s.inputTopic;
+
+    html += `
+      <div class="connector"></div>
+      <div class="topic-pill main" title="${inp.desc}">
+        <span style="opacity:.6;font-size:10px;margin-right:4px">KAFKA</span>${inp.name}
+      </div>
+      <div class="connector"></div>
+    `;
+
+    if (editMode) {
+      html += `<button class="add-btn" onclick="addJobBefore(${i})">＋ Add job here</button>`;
+    }
+
+    html += `
+      <div class="job-card${isActive?' active':''}" data-id="${s.id}" onclick="selectJob('${s.id}')">
+        <div class="edit-btns">
+          <button class="eb" title="Move up" onclick="event.stopPropagation();moveJob(${i},-1)">↑</button>
+          <button class="eb" title="Move down" onclick="event.stopPropagation();moveJob(${i},1)">↓</button>
+          <button class="eb" title="Edit" onclick="event.stopPropagation();openEdit('${s.id}')">✏️</button>
+          <button class="eb del" title="Delete" onclick="event.stopPropagation();deleteJob('${s.id}')">🗑</button>
+        </div>
+        <div class="jc-head">
+          <div class="jc-icon">${s.icon}</div>
+          <div>
+            <div class="jc-name">${s.name}</div>
+            <div class="jc-badges">
+              <span class="badge flink">Apache Flink</span>
+              ${s.redis && s.redis.length ? '<span class="badge redis">Redis</span>' : ''}
+              <span class="badge kafka">Kafka</span>
+            </div>
+          </div>
+        </div>
+        <div class="jc-desc">${s.shortDesc}</div>
+        <div class="jc-meta">
+          <span>⬇ <strong>In:</strong> ${s.inputTopic.name}</span>
+          <span>⬆ <strong>Out:</strong> ${s.outputTopic.name}</span>
+          ${s.sideOutputs ? `<span>⚡ <strong>${s.sideOutputs.length}</strong> side outputs</span>` : ''}
+        </div>
+      </div>
+    `;
+
+    if (s.sideOutputs && s.sideOutputs.length > 0) {
+      html += `<div class="side-outs">`;
+      s.sideOutputs.forEach(so => {
+        const cls = so.type === 'dup' ? 'route' : so.type === 'fail' ? 'err' : 'route';
+        const icon = so.type === 'dup' ? '⚡' : so.type === 'fail' ? '❌' : '↗';
+        html += `
+          <div class="side-out">
+            <span class="side-label">${so.type === 'dup' ? 'duplicate' : so.type === 'fail' ? 'failed' : 'route'}</span>
+            <div class="topic-pill ${cls}" title="${so.desc}">${icon} ${so.name}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+  });
+
+  if (editMode) {
+    html += `<div class="connector"></div><button class="add-btn" onclick="addJobBefore(${cfg.stages.length})">＋ Add job at end</button>`;
+  }
+
+  // Final sink
+  const lastStage = cfg.stages[cfg.stages.length - 1];
+  html += `
+    <div class="connector"></div>
+    <div class="topic-pill main" title="${lastStage.outputTopic.desc}">
+      <span style="opacity:.6;font-size:10px;margin-right:4px">KAFKA</span>${lastStage.outputTopic.name}
+    </div>
+    <div class="connector"></div>
+    <div class="split-row">
+      <div class="split-col">
+        <span class="split-lbl">Telemetry Events</span>
+        <div class="topic-pill sink">📊 druid.events.telemetry</div>
+        <div class="connector" style="height:20px"></div>
+        <div class="sink-box">🗄 Druid<br><span style="font-size:10px;opacity:.7">Analytics Database</span></div>
+      </div>
+      <div class="split-col" style="margin-top:28px">
+        <span class="split-lbl">Summary Events</span>
+        <div class="topic-pill sink">📈 druid.events.summary</div>
+        <div class="connector" style="height:20px"></div>
+        <div class="sink-box">☁️ Cloud Storage<br><span style="font-size:10px;opacity:.7">Long-term archival</span></div>
+      </div>
+    </div>
+    <div style="height:40px"></div>
+  `;
+
+  html += `</div>`;
+  c.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════════
+function selectJob(id) {
+  selectedId = id;
+  const s = cfg.stages.find(x => x.id === id);
+  if (!s) return;
+
+  document.querySelectorAll('.job-card').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+
+  const panel = document.getElementById('panel');
+  panel.classList.add('open');
+  activeTab = 'overview';
+  renderPanel(s);
+}
+
+function renderPanel(s) {
+  const tabs = ['overview','steps','topics','redis','files','metrics'];
+  const tabLabels = ['Overview','Processing Steps','Topics','Redis DBs','Source Files','Metrics'];
+
+  let html = `
+    <div class="dp-head">
+      <div class="dp-icon">${s.icon}</div>
+      <div>
+        <div class="dp-title">${s.name}</div>
+        <div class="dp-desc">${s.shortDesc}</div>
+      </div>
+      <button class="dp-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="tabs">
+      ${tabs.map((t,i) => `<div class="tab${t===activeTab?' on':''}" onclick="switchTab('${t}')">${tabLabels[i]}</div>`).join('')}
+    </div>
+  `;
+
+  // Overview
+  html += `<div class="tc${activeTab==='overview'?' on':''}" id="tc-overview">
+    <p style="font-size:13px;color:var(--t1);line-height:1.7;margin-bottom:16px">${s.description}</p>
+    <div class="sec-h">Data Flow</div>
+    <div style="background:var(--bg2);border-radius:8px;padding:12px;font-size:12px;color:var(--t1);font-family:monospace;line-height:2">
+      ⬇ <span style="color:var(--purple)">${s.inputTopic.name}</span><br>
+      &nbsp;&nbsp;&nbsp;↓<br>
+      📦 <span style="color:var(--blue)">${s.name}</span><br>
+      &nbsp;&nbsp;&nbsp;↓<br>
+      ⬆ <span style="color:var(--green)">${s.outputTopic.name}</span>
+      ${s.sideOutputs && s.sideOutputs.length ? '<br>&nbsp;&nbsp;&nbsp;+' + s.sideOutputs.length + ' side outputs' : ''}
+    </div>
+    <div class="sec-h" style="margin-top:16px">How Flink runs this job</div>
+    <p style="font-size:12px;color:var(--t1);line-height:1.7">
+      The <code style="background:var(--bg2);padding:1px 5px;border-radius:3px">${s.name.replace(/ /g,'')}StreamTask.scala</code> file creates a Flink <strong>StreamExecutionEnvironment</strong>, attaches a Kafka consumer to <code style="background:var(--bg2);padding:1px 5px;border-radius:3px">${s.inputTopic.name}</code>, chains the processing functions, and attaches Kafka producers for each output topic. Flink runs this as a continuously executing long-lived process.
+    </p>
+  </div>`;
+
+  // Steps
+  html += `<div class="tc${activeTab==='steps'?' on':''}" id="tc-steps">
+    ${s.steps.map((st,i) => `
+      <div class="step">
+        <div class="step-n">${i+1}</div>
+        <div>
+          <div class="step-t">${st.title}</div>
+          <div class="step-d">${st.desc}</div>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+
+  // Topics
+  html += `<div class="tc${activeTab==='topics'?' on':''}" id="tc-topics">
+    <div class="sec-h">Input Topics</div>
+    <div class="t-item in">
+      <div class="t-name">${s.inputTopic.name}</div>
+      <div class="t-desc">${s.inputTopic.desc}</div>
+      <span class="t-tag" style="background:rgba(139,92,246,.2);color:var(--purple)">INPUT</span>
+    </div>
+    <div class="sec-h">Primary Output</div>
+    <div class="t-item out">
+      <div class="t-name">${s.outputTopic.name}</div>
+      <div class="t-desc">${s.outputTopic.desc}</div>
+      <span class="t-tag" style="background:rgba(16,185,129,.2);color:var(--green)">PRIMARY OUTPUT</span>
+    </div>
+    ${s.sideOutputs && s.sideOutputs.length ? `
+    <div class="sec-h">Side Outputs</div>
+    ${s.sideOutputs.map(so => {
+      const cls = so.type==='dup'?'dup':so.type==='fail'?'fail':'rt';
+      const tag = so.type==='dup'?'DUPLICATE':so.type==='fail'?'FAILED':'ROUTE';
+      const col = so.type==='dup'?'var(--amber)':so.type==='fail'?'var(--red)':'var(--cyan)';
+      return `<div class="t-item ${cls}">
+        <div class="t-name">${so.name}</div>
+        <div class="t-desc">${so.desc}</div>
+        <span class="t-tag" style="background:rgba(0,0,0,.2);color:${col}">${tag}</span>
+      </div>`;
+    }).join('')}` : ''}
+  </div>`;
+
+  // Redis
+  html += `<div class="tc${activeTab==='redis'?' on':''}" id="tc-redis">
+    ${s.redis && s.redis.length ? s.redis.map(r => `
+      <div class="r-card">
+        <div class="r-db">Redis ${r.db}</div>
+        <div class="r-info">
+          <strong>Host:</strong> ${r.host}<br>
+          <strong>TTL:</strong> ${r.ttl}<br>
+          <strong>Purpose:</strong> ${r.purpose}
+        </div>
+      </div>
+    `).join('') : '<p style="color:var(--t2);font-size:13px">No Redis usage in this job.</p>'}
+    <div style="margin-top:16px;background:var(--bg2);border-radius:8px;padding:12px;font-size:12px;color:var(--t1)">
+      <strong style="color:var(--t0)">Why Redis?</strong><br>
+      Redis is used because it stores data in memory — lookups complete in microseconds. At the scale of millions of events per day, even a 1ms database lookup would create unacceptable latency. Redis gives sub-millisecond responses for both deduplication checks and metadata lookups.
+    </div>
+  </div>`;
+
+  // Files
+  html += `<div class="tc${activeTab==='files'?' on':''}" id="tc-files">
+    ${s.files.map(f => `
+      <div class="f-item">
+        <div class="f-name">${f.name}</div>
+        <div class="f-path">${f.path}</div>
+        <div class="f-desc">${f.desc}</div>
+      </div>
+    `).join('')}
+    <div style="margin-top:16px;background:var(--bg2);border-radius:8px;padding:12px;font-size:12px;color:var(--t1)">
+      <strong style="color:var(--t0)">Code Pattern</strong><br>
+      Every job follows: <code style="background:var(--bg0);padding:1px 4px;border-radius:3px">StreamTask.scala</code> (entry point) → <code style="background:var(--bg0);padding:1px 4px;border-radius:3px">Config.scala</code> (all constants) → <code style="background:var(--bg0);padding:1px 4px;border-radius:3px">*Function.scala(s)</code> (business logic). The StreamTask wires them together using Flink's DataStream API.
+    </div>
+  </div>`;
+
+  // Metrics
+  html += `<div class="tc${activeTab==='metrics'?' on':''}" id="tc-metrics">
+    <p style="font-size:12px;color:var(--t1);margin-bottom:12px;line-height:1.5">Each job emits counters to Prometheus/InfluxDB for monitoring. These are incremented inside the Flink ProcessFunctions using the metrics reporter from dp-core.</p>
+    ${s.metrics && s.metrics.length ? s.metrics.map(m => `<div class="m-item">${m}</div>`).join('') : '<p style="color:var(--t2);font-size:13px">No metrics defined.</p>'}
+  </div>`;
+
+  document.getElementById('panelInner').innerHTML = html;
+}
+
+function switchTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('on', el.textContent.toLowerCase().replace(/ /g,'') === t || el.onclick?.toString().includes(`'${t}'`)));
+  // Re-render panel for selected job
+  const s = cfg.stages.find(x => x.id === selectedId);
+  if (s) renderPanel(s);
+}
+
+function closePanel() {
+  selectedId = null;
+  document.getElementById('panel').classList.remove('open');
+  document.querySelectorAll('.job-card').forEach(el => el.classList.remove('active'));
+}
+
+// ═══════════════════════════════════════════════════════════
+// EDIT MODE
+// ═══════════════════════════════════════════════════════════
+function toggleEdit() {
+  editMode = !editMode;
+  document.getElementById('modeTag').textContent = editMode ? 'Edit Mode' : 'View Mode';
+  document.getElementById('modeTag').className = 'mode-tag ' + (editMode ? 'edit' : 'view');
+  document.getElementById('editBtn').textContent = editMode ? '👁 View Mode' : '✏️ Edit Mode';
+  document.getElementById('editBtn').className = 'btn ' + (editMode ? 'pri' : 'warn');
+  render();
+}
+
+function openEdit(id) {
+  editingId = id;
+  const s = cfg.stages.find(x => x.id === id);
+  document.getElementById('emt').textContent = 'Edit: ' + s.name;
+  document.getElementById('emBody').innerHTML = `
+    <div class="fg"><label>Job Name</label><input id="e-name" value="${esc(s.name)}"></div>
+    <div class="fg"><label>Icon (emoji)</label><input id="e-icon" value="${esc(s.icon)}" style="font-size:18px;width:80px"></div>
+    <div class="fg"><label>Short Description</label><textarea id="e-sdesc">${esc(s.shortDesc)}</textarea></div>
+    <div class="fg"><label>Full Description (HTML allowed)</label><textarea id="e-desc" style="min-height:90px">${esc(s.description)}</textarea></div>
+    <div class="fg"><label>Input Topic Name</label><input id="e-in-name" value="${esc(s.inputTopic.name)}"><div class="hint">The Kafka topic this job reads from</div></div>
+    <div class="fg"><label>Input Topic Description</label><input id="e-in-desc" value="${esc(s.inputTopic.desc)}"></div>
+    <div class="fg"><label>Primary Output Topic Name</label><input id="e-out-name" value="${esc(s.outputTopic.name)}"></div>
+    <div class="fg"><label>Primary Output Topic Description</label><input id="e-out-desc" value="${esc(s.outputTopic.desc)}"></div>
+    <div class="fg"><label>Side Outputs (one per line: name|desc|type)</label>
+      <textarea id="e-sides" style="min-height:90px;font-family:monospace">${(s.sideOutputs||[]).map(so=>`${so.name}|${so.desc}|${so.type}`).join('\n')}</textarea>
+      <div class="hint">Types: route, dup, fail</div>
+    </div>
+  `;
+  openM('editModal');
+}
+
+function saveEdit() {
+  const s = cfg.stages.find(x => x.id === editingId);
+  if (!s) return;
+  s.name = document.getElementById('e-name').value.trim();
+  s.icon = document.getElementById('e-icon').value.trim();
+  s.shortDesc = document.getElementById('e-sdesc').value.trim();
+  s.description = document.getElementById('e-desc').value.trim();
+  s.inputTopic.name = document.getElementById('e-in-name').value.trim();
+  s.inputTopic.desc = document.getElementById('e-in-desc').value.trim();
+  s.outputTopic.name = document.getElementById('e-out-name').value.trim();
+  s.outputTopic.desc = document.getElementById('e-out-desc').value.trim();
+  s.sideOutputs = document.getElementById('e-sides').value.trim().split('\n').filter(Boolean).map(line => {
+    const [name, desc, type] = line.split('|');
+    return {name: name?.trim()||'', desc: desc?.trim()||'', type: type?.trim()||'route'};
+  });
+  closeM('editModal');
+  render();
+  if (selectedId === editingId) {
+    const updated = cfg.stages.find(x => x.id === editingId);
+    renderPanel(updated);
+  }
+  toast('Changes saved');
+}
+
+function addJobBefore(index) {
+  const id = 'job-' + Date.now();
+  const newJob = {
+    id, name:"New Flink Job", icon:"⚙️",
+    shortDesc:"Describe what this job does.",
+    inputTopic:{name:"input.topic",desc:"Input topic description"},
+    outputTopic:{name:"output.topic",desc:"Output topic description"},
+    sideOutputs:[],
+    description:"Full description of this job.",
+    steps:[{title:"Step 1",desc:"Describe the first processing step."}],
+    redis:[],
+    files:[{name:"JobStreamTask.scala",path:"data-pipeline-flink/job-name/src/main/scala/",desc:"Main entry point"}],
+    metrics:["event-count — Total events processed"]
+  };
+  cfg.stages.splice(index, 0, newJob);
+  render();
+  toast('New job added — click ✏️ to configure it');
+}
+
+function deleteJob(id) {
+  if (!confirm('Delete this job from the pipeline visualization?')) return;
+  cfg.stages = cfg.stages.filter(s => s.id !== id);
+  if (selectedId === id) closePanel();
+  render();
+  toast('Job removed');
+}
+
+function moveJob(index, dir) {
+  const newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= cfg.stages.length) return;
+  [cfg.stages[index], cfg.stages[newIndex]] = [cfg.stages[newIndex], cfg.stages[index]];
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════
+// IMPORT / EXPORT
+// ═══════════════════════════════════════════════════════════
+function openIE() {
+  document.getElementById('jsonArea').value = JSON.stringify(cfg, null, 2);
+  openM('ieModal');
+}
+
+function applyJSON() {
+  try {
+    cfg = JSON.parse(document.getElementById('jsonArea').value);
+    closeM('ieModal');
+    closePanel();
+    render();
+    toast('Pipeline config applied');
+  } catch(e) {
+    alert('Invalid JSON: ' + e.message);
+  }
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sunbird-pipeline-config.json';
+  a.click();
+  toast('Config downloaded');
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+function openM(id) { document.getElementById(id).classList.add('on'); }
+function closeM(id) { document.getElementById(id).classList.remove('on'); }
+function openHelp() { openM('helpModal'); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('on'); });
+});
+
+// Init
+render();
+</script>
+</body>
+</html>
