@@ -14,25 +14,27 @@ Robust-5day-learning/
 │   ├── PRODUCT_COMPARISON_MATRIX.md   Cross-cutting real-product comparisons
 │   ├── DAY_TEMPLATE.md                The structure every lesson follows
 │   ├── PROGRESS_TRACKER.md            Daily checklist + weekly self-scoring
-│   ├── HOW_TO_CONTINUE.md             How to expand briefs into full lessons
+│   ├── HOW_TO_CONTINUE.md             How to revise or extend a lesson further
 │   │
 │   ├── Week-01-Foundations/           Days 1–7   (target: Level 2)
-│   │   ├── README.md                  Week theme + full briefs, Days 3–7
-│   │   ├── Day-01/                    ✅ FULL LESSONS (7 files + index)
-│   │   ├── Day-02/                    ✅ FULL LESSONS (7 files + index)
-│   │   └── Day-03/ ... Day-07/        Brief pointers → Week README
+│   │   ├── README.md                  Week theme + index
+│   │   ├── Day-01/ ... Day-06/        ✅ FULL LESSONS (7 files + index, each day)
+│   │   └── Day-07/                    ✅ FULL integrated lab + ADR + review guide
 │   │
 │   ├── Week-02-Internals-and-Depth/   Days 8–14  (target: Level 3)
-│   │   ├── README.md                  Week theme + full briefs, Days 8–14
-│   │   └── Day-08/ ... Day-14/        Brief pointers → Week README
+│   │   ├── README.md                  Week theme + index
+│   │   ├── Day-08/ ... Day-13/        ✅ FULL LESSONS (7 files + index, each day)
+│   │   └── Day-14/                    ✅ FULL integrated lab + Week 2 review guide
 │   │
 │   ├── Week-03-Production-and-Advanced-Ops/  Days 15–21 (target: Level 3.5–4)
-│   │   ├── README.md                  Week theme + full briefs, Days 15–21
-│   │   └── Day-15/ ... Day-21/        Brief pointers → Week README
+│   │   ├── README.md                  Week theme + index
+│   │   ├── Day-15/ ... Day-20/        ✅ FULL LESSONS (7 files + index, each day)
+│   │   └── Day-21/                    ✅ FULL integrated lab + Week 3 review guide
 │   │
 │   ├── Week-04-Architecture-Mastery/  Days 22–27 (target: Level 4)
-│   │   ├── README.md                  Week theme + full briefs, Days 22–27
-│   │   └── Day-22/ ... Day-27/        Brief pointers → Week README
+│   │   ├── README.md                  Week theme + index
+│   │   ├── Day-22/ ... Day-26/        ✅ FULL LESSONS (7 files + index, each day)
+│   │   └── Day-27/                    ✅ FULL interview-readiness + mock review guide
 │   │
 │   └── Capstone-Days-28-30/           Days 28–30 (target: Level 4–4.5)
 │       └── README.md                  Build + document + assess plan, and the
@@ -60,7 +62,7 @@ Robust-5day-learning/
 | See how a tool compares to its real alternatives | [`30-Day-Plan/PRODUCT_COMPARISON_MATRIX.md`](30-Day-Plan/PRODUCT_COMPARISON_MATRIX.md) |
 | Write a new day's lesson myself | [`30-Day-Plan/DAY_TEMPLATE.md`](30-Day-Plan/DAY_TEMPLATE.md) |
 | Track my progress | [`30-Day-Plan/PROGRESS_TRACKER.md`](30-Day-Plan/PROGRESS_TRACKER.md) |
-| Get Claude to write the next day's lessons | [`30-Day-Plan/HOW_TO_CONTINUE.md`](30-Day-Plan/HOW_TO_CONTINUE.md) |
+| Revise or extend a lesson further | [`30-Day-Plan/HOW_TO_CONTINUE.md`](30-Day-Plan/HOW_TO_CONTINUE.md) |
 | See the original 5-day version | [`legacy-5-day-plan/`](legacy-5-day-plan/) |
 
 ---
@@ -71,8 +73,9 @@ Robust-5day-learning/
 |---|---|
 | Tracks | 7 |
 | Days | 30 |
-| Topic-days with full narrative lessons | 14 (Days 1–2 × 7 tracks) |
-| Topic-days fully specified as briefs (ready to expand) | 196 (Days 3–30 × 7 tracks) |
+| Topic-days with full narrative lessons | 182 (26 topic-days × 7 tracks: Days 1–6, 8–13, 15–20, 22–26) |
+| Integrated lab/review days (all 7 tracks in one guide) | 4 (Days 7, 14, 21, 27) |
+| Capstone (integrated build/document/assess) | 1 (Days 28–30) |
 | Master planning docs | 6 (`CURRICULUM`, `PROFICIENCY_RUBRIC`, `PRODUCT_COMPARISON_MATRIX`, `DAY_TEMPLATE`, `PROGRESS_TRACKER`, `HOW_TO_CONTINUE`) |
 | Weeks | 4 + 1 Capstone |
 | Legacy 5-day guides (archived, untouched) | 5 days + runnable final project |

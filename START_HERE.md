@@ -12,9 +12,9 @@ what that means. It replaces (and archives) the original 5-day version.
 1. **Read `30-Day-Plan/CURRICULUM.md`** — the master blueprint. It has the full
    30-day × 7-track matrix, the week-by-week theme progression, and a section (§6)
    mapping specific days onto your real production issues.
-2. **Skim `30-Day-Plan/DAY_TEMPLATE.md`** — every lesson (written or brief) follows
-   this shape: objective → concept → internals → pattern spotlight → lab → product
-   comparison → pitfalls → review questions → checkpoint.
+2. **Skim `30-Day-Plan/DAY_TEMPLATE.md`** — every lesson follows this shape:
+   objective → concept → internals → pattern spotlight → lab → product comparison →
+   pitfalls → review questions → checkpoint.
 3. **Open [`30-Day-Plan/Week-01-Foundations/Day-01/`](30-Day-Plan/Week-01-Foundations/Day-01/)**
    and just start.
 
@@ -22,19 +22,18 @@ what that means. It replaces (and archives) the original 5-day version.
 
 - **~25 min per track × 7 tracks ≈ 3 hours/day.** If you only have an hour, do 2–3
   tracks properly rather than skimming all 7 — depth beats completeness every day.
-- Each week's folder has one `README.md` with that week's theme and (for days without a
-  full lesson file yet) a complete brief per track — enough to self-study or to ask
-  Claude to expand into a full lesson (see `30-Day-Plan/HOW_TO_CONTINUE.md`).
+- Each week's folder has one `README.md` with that week's theme and index, linking to
+  every day's full lesson files.
 - Track progress and self-score honestly in `30-Day-Plan/PROGRESS_TRACKER.md` at the
   end of each week — the target trajectory is roughly Level 2 → 3 → 3.5–4 → 4 → 4–4.5.
 
 ## What's actually written right now
 
-- **Days 1–2**: full lesson files, all 7 tracks — this is the depth/style you should
-  expect (and can replicate) for every other day.
-- **Days 3–30**: complete briefs (not yet full narrative lessons) in each week's
-  `README.md`. The whole 30-day plan is fully designed; not every day is fully
-  narrated into prose yet.
+**All 30 days, all 7 tracks, are fully written.** Days 1-6, 8-13, 15-20, and 22-26
+each have a complete, full-depth lesson file per track (`01-pyspark.md` through
+`07-architecture-system-design.md`). Days 7, 14, 21, and 27 are each one integrated
+lab/review guide (hands-on days spanning all 7 tracks at once, rather than seven
+separate files). The Capstone (28-30) is one integrated build/document/assess guide.
 
 ## If a day feels too easy or too hard
 

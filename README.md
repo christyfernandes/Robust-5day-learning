@@ -57,14 +57,16 @@ comparison**, not just tutorial-shaped how-tos.
 
 ## What's Fully Written vs. What's a Brief
 
-**Days 1–2** (all 7 tracks) are complete, full-depth lesson files — the template for
-everything else. **Days 3–30** currently exist as complete, detailed **briefs**
-(objective + pattern spotlight + product comparison + hands-on lab, for every single
-track on every single day) inside each week's `README.md` — the entire 30-day plan is
-fully designed, just not all narrated into full lesson prose yet. See
-[`HOW_TO_CONTINUE.md`](30-Day-Plan/HOW_TO_CONTINUE.md) for how to expand any day (ask
-Claude, or self-author from the brief) as you reach it — that's also just a more
-honest way to pace 30 days of study than front-loading everything on day zero.
+**All 30 days, all 7 tracks, are now complete, full-depth lesson files** — Days 1–6,
+8–13, 15–20, and 22–26 each have a full narrative lesson per track (objective → core
+concept → internals → design-pattern spotlight → hands-on lab → real-world product
+comparison → pitfalls → review questions → proficiency checkpoint), and the "lab
+days" (7, 14, 21, 27) are each a full integrated lab/review guide rather than seven
+separate files, since those days are explicitly hands-on integration work. The
+Capstone (28–30) remains one integrated build/document/assess guide by design, not
+split per track, since it's a single project. See
+[`HOW_TO_CONTINUE.md`](30-Day-Plan/HOW_TO_CONTINUE.md) if you ever want to revise or
+extend any individual lesson further.
 
 ## Personalized to Real Work
 

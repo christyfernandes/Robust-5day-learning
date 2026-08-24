@@ -1,28 +1,33 @@
 # How to Continue Building This Out
 
-Days 1 and 2 are fully written, for all 7 tracks, as the depth/style template. Days
-3–30 currently exist as **complete briefs** (not full lessons) inside each week's
-`README.md` — every day already has its focus topic, pattern spotlight, product
-comparison target, and hands-on lab defined in `CURRICULUM.md`. What's not yet written
-is the full narrative lesson file per topic-day, in `DAY_TEMPLATE.md`'s format.
+All 30 days, all 7 tracks, are now fully written as complete narrative lessons
+(Days 1-6, 8-13, 15-20, 22-26 each have a full lesson per track in `DAY_TEMPLATE.md`'s
+format; Days 7, 14, 21, 27 are each a full integrated lab/review guide; the Capstone,
+28-30, is one integrated build/document/assess guide by design).
 
-## Option A — Ask Claude to keep writing
+This file now exists for when you want to **revise or extend** something further —
+e.g., updating a lesson once you've actually run its lab against your real systems, or
+adding a new day's worth of content if your own work surfaces a topic this curriculum
+didn't cover.
+
+## Option A — Ask Claude to revise or extend a lesson
 In a new or the same conversation:
-> "Generate Day 5 for all 7 tracks, following DAY_TEMPLATE.md and the Day 5 brief in
-> `30-Day-Plan/Week-01-Foundations/README.md`."
+> "Revise Day 9's ClickHouse lesson — here's what I actually found when I ran the fan-
+> out investigation against our real dashboards, update the lesson with the real
+> numbers."
 
-Point it at this repo (or paste the relevant brief + `DAY_TEMPLATE.md`) and it can
-produce the same depth as Day 1/2. Do this a day (or a week) at a time — matches how
-you'll actually be consuming it anyway.
+Point it at this repo (or paste the relevant lesson file) and it can update it in
+place, keeping `DAY_TEMPLATE.md`'s structure and the same depth as the rest of the
+curriculum.
 
-## Option B — Self-author using the brief + template
-Each week's `README.md` brief gives you everything needed to write the lesson
-yourself in `DAY_TEMPLATE.md`'s structure — useful if you want the writing itself to be
-part of the learning (articulating a concept in your own words is a good Level 3→4
-exercise).
+## Option B — Self-author an extension
+If your own work surfaces a topic this 30-day curriculum didn't cover, use
+`DAY_TEMPLATE.md`'s structure directly — the same 9-section format (objective → core
+concept → internals → pattern spotlight → lab → product comparison → pitfalls →
+review questions → checkpoint) that every lesson in this repo follows.
 
-## Suggested pacing
-Don't front-load all 30 days before starting. Write/generate a few days ahead of where
-you are, so the content stays anchored to what's actually happening in your POC/production
-work that week — several labs are explicitly designed to double as real work artifacts,
-and those are more valuable if timed close to when you hit the real issue.
+## Suggested use going forward
+Treat this repo as a living reference, not a one-time read-through — revisit specific
+lessons when a real incident or design decision at work maps onto one (the
+cross-references throughout point you to related lessons elsewhere in the curriculum),
+and update lessons with real outcomes once you've actually applied them.
